@@ -1,1 +1,22 @@
-# Muller Lab - Methods Tutorial
+### Muller Lab - CfA Methods Tutorial
+
+This is a CfA Method Tutorial based on the project titled: Non-invasive neurostimulation guided by circuit models for suppressing epileptiform activity
+
+Date: March 31, 2025
+
+The brain’s complexity arises from billions of neurons exchanging information through brief electrical signals, called “spikes”. Even after decades of research into the brain, we still do not fully understand how neurons process information by communicating with these spikes. Decoding the processes of perception, thought, and action through these spike patterns continues to pose a challenge. Because of the difficulty of experiments in this field, computational models have proven to be a powerful tool in this effort. 
+
+Artificial neural networks (ANNs) have widespread applications throughout science and industry. These networks have achieved significant successes, including breakthroughs in image and speech recognition. ANNs are often criticized, however, as “black boxes” , because it is difficult to understand precisely how they generate an output. This limited interpretability can make it challenging to compare computation in ANNs directly to processes in the biological brain. 
+
+Spiking neural networks (SNNs) offer a more biologically realistic alternative to understand computation in the brain. Unlike traditional ANNs, SNNs explicitly incorporate spike timing into their function. This aspect allows researchers to connect computation in SNNs to neural computations more clearly and intuitively, potentially improving our understanding of brain function. 
+
+SNNs also bring practical advantages. The fact that neurons in SNNs only communicate when they spike leads to significantly less energy to perform the same computation as compared to a traditional neural network. Additionally, SNNs are compatible with specialized neuromorphic hardware – chips designed specifically for spike-based computations – that can further enhance their efficiency. These properties make SNNs particularly attractive for applications requiring real-time, low-power processing, including portable diagnostic devices and brain–machine interfaces.
+
+Researchers at Western University’s Muller Lab have developed a specialized simulation software called NETSIM, designed explicitly for large-scale simulations of spiking neural networks. NETSIM, written in the C programming language, efficiently simulates networks ranging from hundreds of thousands to millions of neurons. It incorporates biologically realistic synaptic connectivity and parameters, accurately modeling the dynamics of neural activity observed experimentally in real cortical tissue. Careful numerical integration of the neuron and synapse equations ensures NETSIM simulations are precise and reproducible, matching well-established simulation standards. A tutorial for NETSIM installation and basic use is provided at the end of this article.
+
+SNNs represent an important potential avenue for translational research. “Because spiking neural networks can capture the operating regime of biological networks in the brain with
+precision, they are a powerful tool in understanding how the brain responds to stimulation,” says McMaster University Neurosurgery Resident Dr. Mohamad Kesserwan. “Simulations of SNNs in the lab have previously enabled understanding how external sensory stimuli interact with the spontaneous, internally generated activity of the brain [1]. We are now working to understand how non-invasive electrical stimulation interacts with the endogenous activity of the brain, and how to use this knowledge to develop more precise stimulation techniques. This is an important advance, because neurostimulation is already a standard tool in the clinic.”
+
+Advances in spiking neural network technology, simulation tools like NETSIM, and validation techniques collectively bring neuroscientists closer to a clearer and more biologically relevant understanding of brain function. By moving away from ANNs and towards more biologically realistic simulation methods, researchers can draw direct connections between theoretical predictions and experimental observations. Ultimately, these tools have the potential to improve clinical diagnostics and treatment strategies, in addition to our overall scientific understanding of how the brain works.
+
+1. [https://doi.org/10.7554/eLife.76832](https://doi.org/10.7554/eLife.76832)
