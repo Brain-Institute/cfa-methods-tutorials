@@ -1,4 +1,4 @@
-### Muller Lab - CfA Methods Tutorial
+# Muller Lab - CfA Methods Tutorial
 
 This is a CfA Method Tutorial based on the project titled: Non-invasive neurostimulation guided by circuit models for suppressing epileptiform activity
 
