@@ -1,8 +1,8 @@
-# Conformal Prediction and EFGR-Based Post-Processing for MRI Super-Resolution
+# Conformal Prediction and EFGR-Based Post-Processing for MRI and EMI Super-Resolution
 
 ## 1. Conformal Prediction
 
-This project implements a **Conformal Prediction (CP) framework** to enhance clinically meaningful translation of MRI super-resolution. It addresses a key limitation of existing deep learning approaches: **lack of reliable uncertainty quantification**.
+This project implements a **Conformal Prediction (CP) framework** to enhance clinically meaningful translation of MRI and EMI super-resolution. It addresses a key limitation of existing deep learning approaches: **lack of reliable uncertainty quantification**.
 
 Key features:
 - Produces **pixel-wise and region-wise prediction intervals** with formal finite-sample coverage guarantees.
@@ -14,8 +14,7 @@ Key features:
 Next steps for clinical translation:
 - Prospective validation with clinical MRI data.
 - Evaluate the impact of uncertainty-aware super-resolution on radiologist confidence and diagnostic consistency.
-- Integrate into real-world imaging workflows via partnerships with clinical imaging centers and MRI software vendors.
-- Deployment as a **lightweight uncertainty-calibration module** to support regulatory readiness and potential commercialization.
+- Integrate into real-world electromagnetic imaging (EMI) workflows.
 
 ---
 
@@ -33,10 +32,27 @@ Next steps for translation:
 - Validate on **real-world clinical data**.
 - Collaborate with clinical partners to assess **diagnostic impact**.
 - Integrate into existing imaging pipelines as a **lightweight, deployable module** with potential for industry adoption and future commercialization.
-- Use EFGR-based post-processing methods to **address weaknesses of state-of-the-art super-resolution networks**.
+- Use EFGR-based post-processing methods to **address weaknesses of state-of-the-art super-resolution networks** especially for EMI headscanner.
 
 ---
 
 ## Summary
 
 This repository presents a comprehensive framework combining **Conformal Prediction** and **EFGR-based post-processing** to enhance MRI super-resolution, providing **quantifiable uncertainty, robust reconstruction**, and pathways for clinical deployment and commercialization.
+
+
+## Contents
+This project has the following contents:
+
+- “README.md” summary of project
+
+- “Conformal Prediction.pdf” report
+- “Data-CP” for Conformal Prediction data 
+- “Source code-Matlab” folder for Matlab source code
+- “Source code-Python” folder Python source code.
+- “README-CP.md” for running codes
+- “Error Feedback Guided Refinement.pdf” report
+- “Data-EFGR” for Error Feedback Guided Refinement data including low- and high-resolution images
+- “EFGR-Analysis” file for Matlab source code
+- “README-EFGR.md” for running codes
+
