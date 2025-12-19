@@ -17,7 +17,7 @@ Next steps for clinical translation:
 - Integrate into real-world electromagnetic imaging (EMI) workflows.
 
 ---
-Comments: the source of these data are from  [BrainTumorMRI]([https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset)]), [NINS]([https://brain-development.org/ixi-dataset/]), and IXI  [BrainTumorMRI]([https://drive.google.com/file/d/1Gh2pKtVosXmGyv26rERihU27f9UKjcmz/view?usp=sharing)]) datasets. The licensing for data and codes are open sources.
+Comments: the source of these data are from  [BrainTumorMRI](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), [NINS](https://brain-development.org/ixi-dataset/), and IXI  [BrainTumorMRI](https://drive.google.com/file/d/1Gh2pKtVosXmGyv26rERihU27f9UKjcmz/view?usp=sharing) datasets. The licensing for data and codes are open sources.
 
 ## 2. EFGR-Based Post-Processing Methods
 
