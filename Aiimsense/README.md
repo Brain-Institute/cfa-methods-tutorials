@@ -17,7 +17,6 @@ Next steps for clinical translation:
 - Integrate into real-world electromagnetic imaging (EMI) workflows.
 
 ---
-Comments: the source of these data are from  [BrainTumorMRI](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), [NINS](https://brain-development.org/ixi-dataset/), and [IXI](https://drive.google.com/file/d/1Gh2pKtVosXmGyv26rERihU27f9UKjcmz/view?usp=sharing) datasets. The licensing for data and codes are open sources.
 
 ## 2. EFGR-Based Post-Processing Methods
 
@@ -36,6 +35,8 @@ Next steps for translation:
 - Use EFGR-based post-processing methods to **address weaknesses of state-of-the-art super-resolution networks** especially for EMI headscanner.
 
 ---
+
+Comments: the source of these data are from  [BrainTumorMRI](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), [NINS](https://brain-development.org/ixi-dataset/), and [IXI](https://drive.google.com/file/d/1Gh2pKtVosXmGyv26rERihU27f9UKjcmz/view?usp=sharing) datasets. The licensing for these data are open sources.
 
 ## Summary
 
@@ -56,4 +57,5 @@ This project has the following contents:
 - “Data-EFGR” for Error Feedback Guided Refinement data including low- and high-resolution images
 - “EFGR-Analysis” file for Matlab source code
 - “README-EFGR.md” for running codes
+- “Data-HL” for synthetic high- and low-resolution data
 
