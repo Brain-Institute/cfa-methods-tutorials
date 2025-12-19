@@ -17,7 +17,7 @@ Next steps for clinical translation:
 - Integrate into real-world electromagnetic imaging (EMI) workflows.
 
 ---
-
+Comments: the source of these data are from  [BrainTumorMRI](https://example.com), NINS dataset, and IXI dataset and the licensing for data and codes and developed new data and codes are open sources.
 ## 2. EFGR-Based Post-Processing Methods
 
 The project also develops **EFGR-based post-processing methods** to improve the reliability and interpretability of advanced medical imaging algorithms.
