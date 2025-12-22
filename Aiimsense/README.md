@@ -36,7 +36,7 @@ Next steps for translation:
 
 ---
 
-Comments: the source of these data are from  [BrainTumorMRI](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), [IXI](https://brain-development.org/ixi-dataset/), and [NINS](https://drive.google.com/file/d/1Gh2pKtVosXmGyv26rERihU27f9UKjcmz/view?usp=sharing) datasets. The licensing for these data are open sources.
+Comments: the source of these data are from  [BrainTumorMRI](https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset), [IXI](https://brain-development.org/ixi-dataset/), and [NINS](https://figshare.com/articles/dataset/Brain_MRI_Dataset/14778750?file=28399209) datasets. The licensing for these data are open sources.
 
 ## Summary
 
