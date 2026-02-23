@@ -1,0 +1,364 @@
+
+
+##########################################
+###### MEG PIPELINE CENTRAL CONFIG #######
+##########################################
+
+
+# Project main:
+root_output_directory: ''         # Base directory for all pipeline outputs
+
+# General parameters:
+subset: null
+hard_errors: False
+random_seed: 17
+filter:                # NOTE: not fully implemented (yet?); avoid using except for specific scripts that support these
+  subject_IDs: []
+  session_IDs: []
+  group_IDs:   []
+
+# ==== atlases ====
+parcellation:
+  atlas: "Craddock"               # "Craddock" | "Schaefer" | "MIST"
+  n_rois: 50                      # [INT] Number of ROIs to use for parcellation. Note: Different atlases support different inputs here.
+  network_scale: null             # only used for Schaefer atlas (can be '7' or '17')
+  timeseries_type: 'norm'         # [String] 'mean' for regular ROI mean activities, or 'norm' for Z-scored format
+  label_output_dir: 'ROI_info'    # Subdirectory used for exporting of anatomical- and functional ROI labels/decorations (as per 'AUX_anatomical_ROI_labels' script)
+  save_ROI_detail_plots: True     # [BOOL] If True, saves plots (as images) detailing the anatomical position and full anatomical- and functional associations for each ROI, in a subfolder within the above subdirectory.
+atlases:
+  Craddock:
+    craddock_dir: ''  # <-- Needs to be the FULL system filepath
+    canonical_mni: 'MNI152NLin2009cAsym'  # Label for the MNI template family (for bookkeeping/prints only)
+    canonical_res: 2              # Target MNI template resolution (mm) to which the Craddock atlas is harmonized
+    allowed_num_ROIs: [50, 100, 200]  # 50-, 100-, and 200-ROI maps are currently available
+  Schaefer:
+    resolution: 2     # [INT] Desired resolution, in mm
+    allowed_scales:   # First number = n_ROIs; second list numbers are the allowed network_scale params for each 
+      100: [7, 17]
+      200: [7, 17]
+      300: [7, 17]
+      400: [7, 17]
+  MIST:
+    allowed_num_ROIs: [7, 12, 20, 36, 64, 122, 197, 325, 444, 588, 799, 1228]
+
+# ==== freesurfer settings ====
+freesurfer:
+  home:         /opt/freesurfer-7.4.1
+  license:      /opt/freesurfer-7.4.1/license.txt
+  subjects_dir: /opt/freesurfer-7.4.1/subjects
+  setup_script:  SetUpFreeSurfer.sh
+
+
+### MORPHOMETRY FEATURE EXTRACTION PARAMETERS (AUX script):
+morphometry:
+  morphometry_output_dir: 'morphometry'             # Specifies output subdirectory for saving per-subject morphometry measures (from FreeSurfer analyses).
+  morphometry_feature_prefix: 'AnatVol__'           # [String] Universal column-name prefix to attach to all morphometry features (enables easy search/filtering in final output tables)
+  calculate_bilateral_features: True                # [BOOL] If enabled, adds whole-brain (bilateral) volumes by adding matching pairs of hemisphere-specific measures; e.g. 'Left-Amygdala' and 'Right-Amygdala' are summed to produce a new (separate) 'Bilateral-Amygdala' feature column, while also retaining the original columns
+  standardize_morphometry_feature_columns: True     # [BOOL] If enabled, renames columns to the standard format 'Left-', 'Right-', and 'Bilateral-' (the latter only if 'calculate_bilateral_features' is enabled)
+  export_representations: ['raw', 'eTIV', 'BSV']    # [LIST of strings] supports 'raw', 'eTIV', 'BSV'
+                                                              # Raw: exports measures of raw volume, in mm -- not usually recommended as this is confounded by total body-/head size
+                                                              # eTIV: normalizes raw volume measures by total estimated intracranial volume (eTIV); this corrects for straightforward body-/head-size counfounding. If off, exports RAW areal volumes in mm (not recommended).
+                                                              # BSV: normalizes by CURRENT brain size ('BrainSegVol' in default FreeSurfer parlance); i.e. controls for atrophy; useful for detecting regions that are spared/vulnerable under atrophic conditions, etc.
+  export_mode: 'single'                             # [Currently disabled / frozen] (it complicates final wrangling too much at the moment) [String: 'single' or 'separate'] 'single' exports all volumetric respresentations as a single CSV file; 'separate' exports each selected representation [as listed out in 'export_representations', above) as a separate output file.
+
+
+# ==== data management ====
+
+### CORE PARAMETERS:
+
+# Raw data directories:
+original_MEG_data_dir: ''   # Original dataset location; only needed if not already in BIDS-compliant FIF format, in which case 'convert_data_to_FIF' script will convert any non-FIF files in this directory and put them into the 'MEG_data_dir' specified below.
+MEG_data_directory: ''      # MAIN location of final (FIF-filetype) dataset; only needs to be different from 'original_dataset_dir' if the original data is NOT already in .FIF format
+MRI_data_directory: ''
+
+# Mapping arbitrary filename strings to human-readable session_ID codes (NB: may not be the same for both MRI & MEG, although they are in this dataset):
+session_ID_mappings:    # [LIST of DICTs] Make sure these are listed in chronological order (important for certain QC-related cataloging tasks; irrelevant if not using these). This is a MANDATORY field; code will fail if this is an empty DICT or any other kind of "null" value. The "truly minimal" setting that works is a dictionary containing one {key:value} pair: 'UNKNOWN: null' -- this will let the code run without otherwise doing anything.
+  baseline-1:   # <-- the following are just example mappings
+    - null
+  baseline-2:
+    - null
+  ketamine-1:
+    - null
+  ketamine-2:
+    - null
+  placebo-1:
+    - null
+  placebo-2:
+    - null
+  # UNKNOWN:
+  #   - null
+datatype_mappings: # These map filename substrings to standardized 'data_type' categories (categories: substrings) during initial dataset indexing.
+  MRI:
+    - T1w
+    - T2w
+  MEG:
+    - meg
+group_identifiers: null            # [Technically non-mandatory] Substrings to look for in original data directories to assign experimental groups (must be mutually exclusive); otherwise labeled 'UNKNOWN' if null or labels not found. Labels themselves can be changed also, if desired.
+strip_subjectID_substrings: null   # [Case-sensitive] Substrings to remove from filename-derived subject_IDs (i.e. if there are redundant segments); skips if 'null'. Note: does not include the BIDS-standard 'sub-' prefix, which will always be dropped.
+
+### data catalogue QC parameters:
+skip_catalogue_QC: True   # Simple toggle; if 'True', will bypass all QC-decoration, and all processing will proceed using the base file index metadata only (LESS ROBUST)
+QC_table_filepath: null   # [FULL PATH] Where pipeline will look for QC metadata table, if 'skip_catalogue_QC' is not True
+# Optional: if your QC table columns use other names, you can re-map them here (change the second component of each, as necessary):
+QC_column_map:
+  subject_ID: subject_ID
+  session_ID: session_ID
+  data_type: data_type
+  QC_summary: QC_summary
+  QC_comment: QC_comment
+QC_pass_labels: ['good', 'pass', 'OK']    # <-- Defines QC labels used to designate 'good' data / successful QC quality checks; uses exact-string matching, so is case-sensitive, etc. 
+
+### MEG parameter catalogue parameters:
+# i.e. params For MEG metadata acquisition-parameter collection + validation:
+drop_missing_HPI_info: True           # If 'True', automatically removes files that are lacking HPI coordinates (a hard failure condition, since these files cannot be anatomically aligned).
+force_same_sampling_freq: False       # If 'True', throws a hard error if different sampling frequency ('sfreq_Hz') values are detected in input MEG data; 'False' allows, but still throws a printed warning.
+discard_sfreq_mismatch: True          # When 'force_same_sampling_freq' is FALSE, then toggling this will automatically remove any MEG files with discrepant sampling frequencies; otherwise these mismatches will be KEPT and the non-conforming files must be manually re-sampled to match the rest.
+export_MEG_metadata_warnings: True    # If 'True', saves a separate 'MEG_warnings.csv' file, which is a subset of MEG_parameter_index indicating files missing 'TotalReadoutTime' and 'EffectiveEchoSpacing' data (not-fatal, just affects accuracy of certain preprocessing functions); if False, writes to data column in normal single output .csv
+
+### MANIFEST-BUILDING PARAMETERS:
+manifest_overwrite: False   # Overwrites main outputs (subject_manifest.csv and MEG_manifest.csv, and optional subset data catalogue) if they already exist
+CONDITIONS: ['all']         # [Required; LIST; NOT case-sensitive] 'all' performs no extra subsetting; otherwise only subjects with 'group_ID' matches in this list (e.g. 'control', 'MDD', 'experimental' etc.) will be processed
+MRI_selection: ''           # [single STRING] can be 'ANY', or else a target session_ID type, e.g. 'baseline', 'ketamine-2', etc.
+MEG_selection: ['']         # Can be plain STRING 'all' or LIST of strings: use list format for explicit time-point-based selection (must be exact matches)
+complete_MEG_data_only: False     # If 'True', only keeps subjects who have data available for all time-points specified by the 'MEG_selection' policy
+exclude_sub_if_missing: []        # [Optional LIST of STRINGS] Drop subjects with no available data for these time-points; leave empty for no such filtering
+save_subset_catalogue: True       # If True, saves a (separate/new) version of 'master_data_catalogue.csv' that is subsetted by the final subject-pool selection (does not add any new info, just "de-clutters" the main data catalogue)
+
+### MRI reconstruction parameters:
+dry_run: False
+
+### Coregistration parameters:
+coreg_output_dir: 'coregistration'
+overwrite_coregistration: False
+overwrite_watershed: False
+BEM_parameters:
+  BEM_connectivity: [0.3, 0.006, 0.3]     # [LIST of exactly THREE float values] Three-factor projected conductivity values for brain, skull, and scalp volumes (respectively); if a single-layer model is generated instead, uses only the third ("scalp" value).
+  BEM_ICO: 5                              # '5' = "high-resolution"; '4' = faster but lower-res
+  BEM_flooding: 25                        # Default value = 25; can be increased (e.g. to '40') if errors are encountered with projected surfaces not being nested properly
+coregistration_parameters:
+  num_coregistration_iterations: 10       # Number of iterations for automatic alignment procedure in MRI coregistration
+
+### Source estimation parameters:
+source_space_output_dir: 'source_spaces'
+forward_modeling_output_dir: 'forward_models'
+inverse_modeling_output_dir: 'inverse_models'
+source_estimate_output_dir: 'source_estimates'
+SRC_QC_output_subdir: 'QC-SRC'
+overwrite_source_estimation: True
+source_spacing:
+  include_cortical_surface: False       # If 'True', creates two separate models for cortical surface and subcortical volume; if 'False', generates a single undifferentiated volumetric model for all brain space.
+  target_surface_file: 'pial'           # Sets filename of 'lh.-' and 'rh.-' files for FreeSurfer to retrieve from subjects' '/surf/' subdirectory; many options but 'pial' is the most sensible option here IMO
+  cortical_resolution: 'oct6'           # If INT, sets cortical spacing in mm; other options include 'ico3' (~7.1mm), 'ico4' (~3.5mm), 'ico5' (~1.8mm), 'oct6' (~5mm), and 'oct5' (~10mm); can also say 'all' for MAXIMUM resolution (one projected source for every single vertex present in the given FreeSurfer reconstruction).
+  volumetric_resolution: 5.0            # Sets spacing between points in volumetric source space (in mm)
+noise_epoching:                     # <-- NB: Refers to (mandatory) epoching for Noise Covariance Estimation and the subsequent application of the Inverse Model; not epoching of the neural time-series data
+  noise_epoch_length:  2.0              # "Dummy" epoch length, in seconds
+  noise_epoch_overlap: 1.0              # "Dummy" epoch overlap, in seconds
+inverse_modeling:
+  inverse_model_method: 'dSPM'          # Options include: 'dSPM' (Dynamic Statistical Parametric Mapping; "classic" L2-norm regularization), 'MNE' (Minimum Norm Estimate), 'sLORETA' (Standardized Low Resolution Brain Electromagnetic Tomography), 'eLORETA' (Exact...), and 'MNE-sLORETA' (Combining MNE and sLORETA).
+  inverse_model_orientation: 'vector'   # Options include: 'normal' (for more cortically-focused analyses), 'vector' (for more subcortically-focused analyses), and 'fixed'.
+  inverse_model_depth: 'auto'           # Controls depth weighting of sources. Allowed values:
+                                        #   - 'auto'  : do not pass depth explicitly; use MNE's default behavior, which tries to use reasonable default values (matches old pipeline)
+                                        #   - 'none'  : disable depth weighting (treat deeper vs superficial sources more equally)
+                                        #   - <float> : [ADVANCED OPTION] numeric exponent (e.g. 0.8) for depth weighting
+                                        #   - <dict>  : [ADVANCED OPTION] dict, e.g. {exp: 0.8, limit: 10.0} (passed directly to MNE)
+source_estimation:
+  assumed_SNR: 3.0                      # [INT] The ASSUMED SNR ratio for the dataset; may need to test out multiple values (e.g. [1.0, 3.0, 9.0]) to find optimal lambda^2 value for a given dataset / file.
+  devectorize: True                     # Massively reduces output file size by discarding vector orientation data; recommended.
+  save_raw_data: False                  # Toggle to control saving of raw data, prior to "de-vectorization" -- not recommended as this is a huge file, not really needed except for rare cases of deep debugging/diagnostics
+  downsampling_rate: 100                # Target rate (in Hertz) to downsample Source Estimate to.
+  write_full_source_estimate: True      # Toggle to enable saving of "4D" Source Estimate, i.e. the full volumetric image, de-vectorized (this is the principal output of this pipeline stage; but made toggle-able due to its very large size)
+  save_flattened_copy: True             # Toggle to control saving of a "flattened" ("3D") copy of the output volume image, i.e. averaged across all time-points for every voxel. Used for diagnostic purposes only.
+
+### Alignment parameters (script #05):
+morph_output_dir: 'morphs'
+overwrite_alignment: True
+alignment_parameters:
+  spacing: 4                            # in mm; sets voxel resolution of volumetric morph resolution to target template. 4-5 recommended; 7 would be rather "coarse". In nearly all cases should be equal to or otherwise very close to the value set in 'volumetric_resolution'.
+  target_template: 'fsaverage'          # Target brain image to which to morph
+
+### Parcellation parameters (script #06):
+parcellation_output_dir: 'timeseries'
+overwrite_parcellations: True
+overwrite_cached_atlas: True            # If 'False', attempts to re-use any matching existing atlas caches. Atlas transformations as usually computationally trivial, so it's recommended to leave this enabled to ensure fresh computations for each processing batch.
+enable_QC_overlays: True
+QC_output_dir: 'QC-parcellations'
+registration_parameters:
+  registration_type: 'SyN'              # ants.registration 'type_of_transform' (e.g., "SyN", "SyNCC", "Affine")
+
+#### Correlation parameters (script #07):
+compute_correlations:
+  metrics_output_dir: 'graph_metrics'
+  overwrite_metrics: True
+  correlation_type: 'partial'     # [String] Supports: 'pearson', 'partial'
+  centrality_types: ['eigenvector', 'degree']     # [LIST of STRINGS] Supports: 'eigenvector', 'betweenness', 'closeness', 'degree', 'pagerank'
+  graph_metrics: ['Q']            # 'Q' = Q modularity; more options TBD
+  absolute_weight_values: True    # [Boolean] If 'False', allows negative edge weight values; 'True' forces calculations to use only absolute correlation values
+  # omit_session_labels: True       # [Boolean] Optional; if enabled, excludes session info from column labels -- this is purely for tidying up column names in the case of performing analyses on only a single fixed time-point, in which case this info is superfluous
+  # flatten_output: True            # [Boolean] Toggles automatic flattening of output (dataframe/csv) into 1-dimensional vector
+  epoch_length: 500               # ['null' or INT] number of time-samples to include in each window; skips & computes correlations across all samples together if 'null' or '0'
+  epoch_overlap: 0                # ['null' or INT] amount of overlap for sliding-window analyses; no overlap if 'null' or '0'
+  ensure_uniform_length: True     # [Boolean] checks for uniform length of time series across subjects -- if enabled, throws errors on mismatches
+
+### ML -- compiling & collating data (script #08):
+ML_prep:
+  input_data_directory: ''   # Use full path to epoched graph-derived data, unflattened (if using default params, should be 'epoched' subdir under 'metrics_output_dir')
+  training_data_dir: 'ML_training_data'       # Output directory
+  overwrite_data_prep: True
+  use_manifest_filter: True         # If 'True', only grabs files that are explicitly featured in the current 'MEG_manifest.csv' table. 
+  ML_centrality_types: []           # If empty list or null, re-uses list from main 'centrality_types' parameter field, above; otherwise can be used to define subset of features to prep for ML
+  ML_graph_metrics: []              # If empty list or null, re-uses list from main 'centrality_types' parameter field, above; otherwise can be used to define subset of features to prep for ML
+ML_preprocessing:
+  standardize: True       # z-score features across all timepoints in training set
+  center_only: False      # Toggles mean-centering *without* variance scaling (otherwise mean centering is inherently a part of the 'standardize == True' processing path)
+  handle_missing: 'drop'  # or 'impute_zero' / 'impute_mean' if NaNs arise
+  use_holdout: True               # [BOOL] Split windows into train/test sets. Note that: (a) an 'X_all' file will always be created regardless, and (b) an 'X_test' will still be created if this is disabled, but it will be empty.
+  holdout_fraction: 0.2           # [Float, 0-1] Percent of data to use for the holdout set ('X_test')
+  split_by_subject: True          # [BOOL] If 'True', builds train/test datasets by assigning ALL samples from a given subject_ID to one pool or the other; if 'False', all samples are treated as a "global pool, which allows sequences from the same subject to be mixed across training / test pools (not recommended for most use-cases)
+  enforce_class_balance: True     # [BOOL] If enabled, maintains balance of 'group_ID' in test data split; if disabled (or if 'group_ID' column data is not available), split is truly random
+
+
+### ML -- training & evaluation / selection (used by MEG scripts #09 AND #10):
+ML_training:
+  dataset_selector: 'latest'        # [STRING] 'latest' automatically uses last dataset generated (in script #09); 'manual' uses the dataset located in the subfolder pointed to by the full path 'dataset_path' variable, below.
+  dataset_path: null                # [FULL PATH] Only used if 'dataset_selector' (above) is set to 'manual'; otherwise unused.
+
+
+### HMM-specific (Used by MEG script #09; HMM-specific fields kept independent to allow for the potential integration of additional model types later on...):
+HMM_training:
+  enabled: True
+  HMM_model_directory: 'models-HMM'
+  overwrite_models: True                                # General / global output overwrite toggle
+  protocols_to_run: ['diag_raw', 'full_pca80']          # [LIST of STRINGS] See ['HMM_protocols'] fields to review / create protocol presets
+HMM_evaluation:
+  automatic_selection: True       # If True, selects "best" HMM model automatically, based on evaluation metric specified in the 'criteria' field below; if 'False', models can be manually reviewed and selected by the user in a dedicated cell of the model-training script.
+  criteria: 'val_logL'            # [String, CASE-SENSITIVE] can be 'AIC', 'BIC', or 'val_logL'
+  refit_on_all_data: True         # If True, re-runs the chosen model (whether automatically or manually selected) on the full data, i.e. without a withheld holdout set.
+HMM_protocols:
+  defaults:
+    k_values: [4, 5, 6, 7, 8]
+    num_initializations: 5
+    max_iterations: 1000
+    convergence_tolerance: 0.0001
+  presets:
+
+    CUSTOM_PRESET_NAME:             # Presets can be named any python-legible string.
+      # Core fields (required):
+      covariance_type:              # [STRING] use 'full' or 'diag'(-onal) covariance
+      PCA:
+        enabled:                    # [BOOL]
+        n_components:               # [Multi] if 'null', keeps ALL components; if float btwn 0-1, retains the selected proportion of variance; if INT >1, uses that exact number of components
+        whitening:                  # [BOOL]
+      # Optional fields (otherwise uses values as per 'HMM_protocols|defaults'):
+      k_values:                     # [LIST of INTS]      OPTIONAL; uses ['defaults'] value if empty/unspecified
+      num_initializations:          # [INT]               OPTIONAL; uses ['defaults'] value if empty/unspecified
+      max_iterations:               # [INT]               OPTIONAL; uses ['defaults'] value if empty/unspecified
+      convergence_tolerance:        # [FLOAT]             OPTIONAL; uses ['defaults'] value if empty/unspecified
+
+    diag_raw:
+      covariance_type: 'diag'
+      PCA:
+        enabled: false
+        n_components: null
+        whitening: false
+      k_values: null
+      num_initializations: 10
+
+    full_pca90:
+      covariance_type: 'full'
+      PCA:
+        enabled: True
+        n_components: 0.90
+        whitening: True
+      num_initializations: 10
+
+    full_pca95:
+      covariance_type: 'full'
+      PCA:
+        enabled: True
+        n_components: 0.95
+        whitening: True
+      num_initializations: 10
+
+    full_pca80:
+      covariance_type: 'full'
+      PCA:
+        enabled: True
+        n_components: 0.80
+        whitening: True
+      num_initializations: 10
+
+    full_pca99:
+      covariance_type: 'full'
+      PCA:
+        enabled: True
+        n_components: 0.99
+        whitening: True
+      num_initializations: 10
+
+### Cross-model evaluation & final selection:
+cross_model_evaluation:
+  enabled: True
+  overwrite_final_model: False             # Toggle to overwrite final model bundle
+  split_unit: 'subject'                    # [STRING] 'subject' or 'sequence'
+  align_states:
+    method: 'hungarian'                    # [STRING] only supports 'hungarian' option at the moment
+    distance: 'means-l2'                   # [STRING] only supports 'means_l2' option at the moment; may later add 'means_cosine' & 'means+cov'
+  minimums:
+    min_sequences_per_fold: 10             # [INT]
+    min_total_observations_per_fold: 500   # [INT]
+    min_sequence_length: 10                # [INT]
+
+  ### STABILITY testing (only the first 2-3 parameters should be touched in most cases; other parameters are for ADVANCED use only):
+  stability:
+    enabled: True
+    split_strategy: "blocked_random"       # [STRING] 'blocked_random' | 'odd_even_blocks' | 'contiguous_halves'
+    n_repeats: 20                          # [INT] number of repeated half-splits
+    block_len: 2                           # [INT] in timepoints/windows (used by blocked_* strategies). Should be kept to 2-3 for fMRI data (fewer total timepoints); can be increased to 5-10+ for MEG data. (Median sequence length divided by 10 is a decent rule-of-thumb here.)
+    mode: 'fixed_model'                    # [STRING] 'fixed_model' or 'refit_models'. If 'fixed_model', skips alignment entirely; if 'refit_models', uses Hungarian (l2) alignment. fMRI datasets should nearly always use 'fixed_model'; MEG data may vary.
+    metrics:
+      occupancy_corr: True                 # [BOOL] corr of state occupancy vectors (A vs B)
+      transition_frobenius: True           # [BOOL] '|T_A - T_B|_F' after alignment
+      dwell_jsd: True                      # [BOOL] Jensen–Shannon divergence of dwell distributions
+    report:
+      save_per_repeat_details: False       # [BOOL] if true, save long-form repeat-level results (larger files)
+
+  ### GENERALIZATION testing (only the first two parameters should be touched in most cases; other parameters are for ADVANCED use only):
+  generalization:
+    enabled: True
+    n_folds: 5                             # [INT] 'K' for K-fold cross-validation
+    n_repeats: 1                           # [INT] Number of times to repeat each fold; default = 1
+    stratify_by_group: False               # if 'group_ID' data is available (e.g. 'control' vs. 'MDD' group), balances folds to contain similar ratio as input data
+    metrics:
+      test_logL_per_timepoint: True
+      train_logL_per_timepoint: False      # optional
+    report:
+      save_per_fold_details: True
+
+### Feature extraction/engineering (following final model selection):
+HMM_decoding:
+  export_level: "session"                   # [STRING; 'session' or 'subject'] Selects the level at which to aggregate features; 'session' keeps individual session_IDs separate, while 'subject' collapses all time points from every session into a single row. Note: this parameter jointly controls feature engineering & feature exporting across both script #12 and script #13
+  output_directory_name: "HMM_features"     # <-- Goes in main project base directory
+  overwrite: True
+  save_time_resolved: True                  # writes a time-resolved table (rows match 'X_all')
+  save_posterior_probabilities: True        # if True, includes K posterior columns (or JSON), else only hard labels
+  posterior_probability_format: "wide"      # "wide" or "json" (wide = K columns; json = one column storing list)
+HMM_feature_engineering:
+  entropy_mode: 'top_windows'               # [STRING; 'top_windows' or 'percentile_threshold'] 'top-windows' option (for low-temporal-resolution data, like most fMRI) computes fractional high-entropy states via taking the mean of entropy measures across the <K> highest-entropy windows, where 'K' is set by 'entropy_num_top_windows', below; 'percentile_threshold' uses a simple percentile-based cutoff instead (recommended for higher-temporal-resolution data, like MEG)
+  entropy_num_top_windows: 3                # [INT] number of time-points to use for characterizing high-entropy states (see above)
+  entropy_threshold_percentile: 80          # [INT] A percentile between 50-100; this sets the threshold at which a given time-window is considered to be in a "high-entropy" state (as measured by the 'posterior_probability_entropy' value at each time point), and used to calculate the 'fraction_high_entropy_windows_p*' feature column
+  include_auxiliary_features: False         # [BOOL] Toggles inclusion of optional/exploratory features (features that usually don't add much incremental value in ML unless doing very detailed temporal modeling); toggle includes to following feature outputs: '<time>_posterior_probability_max', 'dwell_median', 'number_of_state_runs', and 'mean_posterior_probability_max'.
+
+### Model state interpretation:
+interpretation_output_dir: 'HMM_states'
+overwrite_state_definitions: True
+
+
+# ___________________________________________________________________________________
+### FINAL DATA EXPORT:
+final_output_dir: '_final_output'   # Set as blank / null to save master output table in main project directory
+output_sets:                        # Note: All toggles only add data IF PRESENT in expected root output folder subdirectories; mismatches / unfound data will trigger printed warnings -- and fill in missing data with NaNs -- but will otherwise mostly not hard-fail
+  morphometry:  True                # Toggles inclusion of anatomical volume data from morphometry stage (auxiliary / support script)
+  HMM_features: True                # Toggles inclusion of data from 'HMM_decoding' stage above (i.e. metrics related to time-resolved state assignments for each subject, as well as summary-level variables like total occupancy rates, dwell times, etc.)
+  HMM_states:   True                # Toggles inclusion of data from 'HMM_feature_engineering' stage above (i.e. metrics related to interpreting model states)
+  graph_metrics_un_epoched: True    # Toggles inclusion of session-level graph metrics data (i.e. centralities & modularities calculated across entire neuroimaging sessions; "un-epoched")
+  graph_metrics_epoched:    False   # Toggles inclusion of time-resolved (epoched) graph_metrics data, if present -- This set of output contributes by far the greatest total column count in the final export data
