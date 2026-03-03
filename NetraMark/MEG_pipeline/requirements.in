@@ -1,0 +1,12 @@
+PyYAML
+pandas
+numpy
+mne
+matplotlib
+nibabel
+nilearn
+scipy
+scikit-learn
+networkx
+hmmlearn
+joblib
