@@ -1,0 +1,33 @@
+# Cross-platform environment file
+# For exact macOS reproducibility, see environment-macos-lock.yml
+name: imbiotype
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.11
+  # Scientific stack
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - pandas=2.2
+  - scikit-learn=1.2.2
+  - statsmodels=0.14
+  # Visualization
+  - matplotlib=3.10
+  - seaborn=0.13
+  - pillow
+  # Utilities
+  - networkx=3.4
+  - joblib=1.4
+  - requests
+  - tqdm
+  - pooch
+  # Qt GUI
+  - pyqt=5.15
+  # Package management
+  - pip
+  - pip:
+      - cca-zoo==2.6.0
+      - "mne[full-no-qt]==1.10.1"
+      - tensorly==0.9.0
