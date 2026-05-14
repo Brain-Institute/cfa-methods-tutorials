@@ -1,0 +1,646 @@
+---
+title: "20250052 - Kutcher/Sicard - CfA"
+subtitle: ""
+author: 'S. Kutcher, V. Sicard, A. Dodd (ft. R. Belaghi)  -- `r strftime(Sys.time(),format="%d-%b-%Y at %H:%M")`'
+date: '`r knitr::current_input(dir = TRUE)` -- `r CRUmisc::showSVNversion()`'
+always_allow_html: true
+params:
+  fastknit: FALSE
+output:
+  word_document:
+   reference_docx: templateLandscape8ptArialNarrowMargins.docx
+---
+```{r, include=FALSE}
+# knitting code
+library(CRUmisc)
+library(CRUmarkdown)
+library(here)
+```
+
+```{r, message=FALSE}
+# libraries
+library(dplyr)
+library(tidyr)
+library(caret)
+library(scales)
+library(gtsummary)
+library(flextable)
+library(NbClust)
+library(ggplot2)
+library(factoextra) # fviz_cluster
+# devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
+library(ggradar)
+library(dendextend)
+```
+
+```{r Call prepareData, include=FALSE, message=TRUE}
+knitr::opts_chunk$set(echo=FALSE,warning=FALSE,comment="##",dpi=4*72,fig.width=9.5,fig.height=6.5)
+
+# These 2 lines make knit_child work properly when using "Run" in RStudio.
+knitr::opts_knit$set(output.dir = ".")
+options(knitr.duplicate.label = 'allow')
+
+output <- knitchild(here("Analysis","prepareData.Rmd"))
+```
+
+`r output`
+
+```{r flextableSetting, include=FALSE}
+set_flextable_defaults(
+  font.family = "Arial", font.size = 10, 
+  border.color = "Black",
+  padding.bottom=1, padding.top=1, line_spacing = 1)
+```
+
+
+
+```{r filter tilt data, include=F, message=F}
+data_tilt.ortho <- cfa_working_dat |> # nrows = 2611(n=2345); ncols = 1240
+  filter(complete_ortho_tilt=="Yes" ) |> 
+  select(
+    # baseline patient characteristics
+    record_id:`Days since injury`,
+    education_code,
+    Hypertension:`Myocardial infarction`,
+    `Congenital heart disease`:`Sleep apnea`,
+    `Thyroid disorders`:`Intellectual disability`,
+    mh_neuro_dsblty_svrty,
+    Vertigo:ASD,
+    Anxiety:Depression,
+    `Previous concussion`,
+    Mechanism,
+    Confused:`Answered questions slowly`,
+    `Post-traumatic amnesia`:`Loss of consciousness`,
+    
+    # SCAT symptom score
+    SCAT5SymptmEvalTotSymptmScore,
+    
+    # tilt orthostatic vitals
+    TiltLyingSBP:TiltLyingHR,
+    TiltStandingSBP:TiltStandingHR,
+    StandingSBP_1_Minute:StandingHR_1_Minute,
+    StandingSBP_2_Minute:StandingHR_2_Minute,
+    StandingSBP_3_Minute:StandingHR_3_Minute,
+    
+    # Tilt symptoms
+    n_symp_lying:n_symp_standing_3min,
+    symptom_provocation, symptom_exacerbation,
+    
+    # mental health
+    gad_tot, phq9_tot, 
+    bess_tandem_error,
+    
+    # HRV
+    S1_SDNN,
+    S1_RMSSD,
+    S2_SDNN,
+    S2_RMSSD) |> 
+  mutate(mh_neuro_dsblty_svrty = case_when(is.na(mh_neuro_dsblty_svrty) ~ 0, 
+    TRUE ~ mh_neuro_dsblty_svrty),
+    Sex = droplevels(Sex),
+    Mechanism = as.factor(Mechanism),
+    Confused = as.factor(Confused),
+    `Answered questions slowly` = as.factor(`Answered questions slowly`),
+    `Post-traumatic amnesia` = as.factor(`Post-traumatic amnesia`),
+    `Loss of consciousness` = as.factor(`Loss of consciousness`),
+    `symptom_provocation` = as.factor(`symptom_provocation`),
+    `symptom_exacerbation` = as.factor(`symptom_exacerbation`),
+    S1_SDNN = as.factor(S1_SDNN),
+    S2_SDNN = as.factor(S2_SDNN),
+    S1_RMSSD = as.factor(S1_RMSSD),
+    S2_RMSSD = as.factor(S2_RMSSD)
+    
+    ) |> 
+    group_by(record_id)  |>
+    slice(1)  |>
+    ungroup() 
+    ### N = 539; columns = 85
+
+data_tilt.ortho <- data_tilt.ortho|>
+    select( 
+      # not required for analyses
+      -c(response_date, 
+        consent_date, 
+        injinfo_002_date, 
+        record_id,
+        date_diff_cumulative,)
+    ) |>
+    mutate(
+      education_code = case_when(education_code == 9999 ~ NA,
+        TRUE ~ education_code),
+      Sex = case_when(Sex == "Female" ~ 1, Sex == "Male" ~ 0),
+      symptom_provocation = case_when(symptom_provocation == "No" ~ 0,
+        symptom_provocation == "Yes" ~1),
+      symptom_exacerbation = case_when(symptom_exacerbation == "No" ~ 0,
+        symptom_exacerbation ==  "Yes" ~1),
+      S1_SDNN = as.numeric(S1_SDNN),
+      S1_RMSSD = as.numeric(S1_RMSSD),
+      S2_SDNN = as.numeric(S2_SDNN),
+      S2_RMSSD = as.numeric(S2_RMSSD)
+    ) |>
+    na.omit() 
+    ### N = 266; columns = 80
+
+# record_id <- data_tilt.ortho |> 
+#   select(record_id)
+```
+
+# Data preparation
+
+```{r data preparation}
+## Data preparation
+nrow(data_tilt.ortho) # number of participants = 266
+ncol(data_tilt.ortho) # number of columns = 80
+
+# identify columns with low variance (sparse data)
+remove_columns <- nearZeroVar(data_tilt.ortho)
+# drop those columns
+data_tilt.ortho <- data_tilt.ortho |> 
+  select(-all_of(remove_columns),
+    # drop non-continuous / non-binary data
+    -c(Mechanism:`Loss of consciousness`)
+    )
+
+### N = 266; columns = 41
+## print first 5 rows and 10 columns
+data_tilt.ortho[1:5, 1:10]
+
+# Scale the data for ML modelling 
+scale_tilt.ortho <- as.data.frame(scale(data_tilt.ortho))
+
+```
+
+## Results
+
+### Table 1: Study population characteristics 
+
+```{r description table}
+# create a table of participant characteristics
+## prepare table 1 data
+## calculate autonomic dysregulation outcome & rename education levels for presentation simplicity
+table_1_dat <- data_tilt.ortho |> 
+  mutate(
+    # AD tilt (objective)
+    AD = ifelse(
+      # Decrease in DBP of at least 10 mm Hg
+      (TiltStandingDBP - TiltLyingDBP)<=-10 |
+      (StandingDBP_1_Minute-TiltLyingDBP)<=-10 |
+      (StandingDBP_2_Minute - TiltLyingDBP)<=-10 | 
+      (StandingDBP_3_Minute - TiltLyingDBP)<=-10 | 
+      # Decrease in SBP of at least 20 mm Hg
+      (TiltStandingSBP - TiltLyingSBP)<=-20 |
+      (StandingSBP_1_Minute-TiltLyingSBP)<=-20 |
+      (StandingSBP_2_Minute - TiltLyingSBP)<=-20 | 
+      (StandingSBP_3_Minute - TiltLyingSBP)<=-20 | 
+      # Increase in HR of at least 40 bpm (ages 16-19) or 30 bpm (ages 19+)
+      (Age>19 & (TiltStandingHR - TiltLyingHR)>=30) |
+      (Age>19 & 
+        (StandingHR_1_Minute-TiltLyingHR )>=30) |
+      (Age>19 & 
+        (StandingHR_2_Minute - TiltLyingHR )>=30) | 
+      (Age>19 & 
+        (StandingHR_3_Minute - TiltLyingHR )>=30) | 
+      (Age<=19 & (TiltStandingHR - TiltLyingHR )>=40) |
+      (Age<=19 & (StandingHR_1_Minute-TiltLyingHR)>=40) |
+      (Age<=19 & 
+        (StandingHR_2_Minute - TiltLyingHR)>=40) |
+      (Age<=19 & 
+        (StandingHR_3_Minute - TiltLyingHR)>=40), 1, 0),
+    # AD (subjective)
+    AD_subjective = case_when(symptom_provocation == 1 | 
+      symptom_exacerbation == 1 ~ 1, 
+      TRUE ~0),
+    education = case_when(
+      education_code == 1 ~ "Never attended / Kindergarten only",
+      education_code == 2 ~ "1st Grade",
+      education_code == 3 ~ "2nd Grade",
+      education_code == 4 ~ "3rd Grade",
+      education_code == 5 ~ "4th Grade",
+      education_code == 6 ~ "5th Grade",
+      education_code == 7 ~ "6th Grade",
+      education_code == 8 ~ "7th Grade",
+      education_code == 9 ~ "8th-12th Grade",
+      education_code == 10 ~ "8th-12th Grade",
+      education_code == 11 ~ "8th-12th Grade",
+      education_code == 12 ~ "8th-12th Grade",
+      education_code == 13 ~ "8th-12th Grade",
+      education_code == 14 ~ "OAC/13th Grade",
+      education_code == 15 ~ "High school graduate",
+      education_code == 16 ~ "CEGEP Year 1",
+      education_code == 17 ~ "Some college/University",
+      education_code == 18 ~ "GED or equivalent",
+      education_code == 19 ~ "Some college/University",
+      education_code == 20 ~ "Some college/University",
+      education_code == 21 ~ "Some college/University",
+      education_code == 22 ~ "Bachelor's degree",
+      education_code == 23 ~ "MSc/PhD degree",
+      education_code == 24 ~ "Professional school degree",
+      education_code == 25 ~ "MSc/PhD degree",
+      education_code == 9999 ~ "Do not know",
+      TRUE ~ NA_character_),
+    education = factor(education, levels=c(
+      "8th-12th Grade",
+      "High school graduate",
+      "Some college/University",
+      "Bachelor's degree",
+      "MSc/PhD degree"
+    ))
+  )
+
+# create table 1 
+table1 <- table_1_dat  |> 
+  select(
+    Age,
+    Sex,
+    education,
+    gad_tot,
+    phq9_tot,
+    bess_tandem_error,
+    SCAT5SymptmEvalTotSymptmScore,
+    AD,
+    AD_subjective
+  ) |>
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      Age = "Age, years",
+      Sex = "Female",
+      education = "Education",
+      SCAT5SymptmEvalTotSymptmScore = "SCAT6 Symptom score (0-132)",
+      AD = "Autonomic dysregulation (orthostatic vitals)",
+      AD_subjective = "Autonomic dysregulation (symptom provocation)",
+      gad_tot = "GAD-7 (Anxiety)",
+      phq9_tot = "PHQ-9 (Depression)",
+      bess_tandem_error ="BESS tandom error score"
+    ),
+    missing_text = "Missing"
+  )
+# print table 1
+table1
+```
+
+## Analysis portion
+
+```{r nbclust}
+## NbClust function: to determine the best partition to optimize of the number of clusters
+res_nbclust <- NbClust(scale_tilt.ortho, 
+  distance = "euclidean", 
+  min.nc=2, max.nc=10, 
+  method = "ward.D2", 
+  index = "alllong")
+
+# store the most frequently recommended cluster size
+out_nbclust <- as.data.frame(res_nbclust$Best.nc) |> 
+  slice(1) |> 
+  pivot_longer(
+    cols = KL:SDbw,
+    names_to = 'indice',
+    values_to = 'cluster'
+  )
+cluster_size = as.numeric(names(sort(-table(out_nbclust$cluster)))[1])
+```
+
+```{r hierarchical clustering}
+# Run the hierarchical agglomerative clustering machine learning model
+## Create a dissimilarity matrix
+d2 <- dist(scale_tilt.ortho, method = "euclidean")
+
+## Hierarchical agglomerative clustering using Ward's D2 method
+hc_tilt <- hclust(d2, method = "ward.D2" )
+
+## Cut the clustering tree into the number of groups from NbClust()
+clust_grp <- cutree(hc_tilt, k = cluster_size)
+
+```
+
+```{r}
+## store subgroup results in a dataframe
+clust_grp_dat <- as.data.frame(clust_grp)
+
+## store the clustering results in the unscaled and scaled data sets
+data_tilt.ortho_clust <- data_tilt.ortho |> 
+  bind_cols(clust_grp_dat)
+
+## store in scaled data
+scale_tilt.ortho_clust <- scale_tilt.ortho |> 
+  bind_cols(clust_grp_dat)
+```
+
+# Table of patient characteristics by the clustering levels
+
+```{r}
+## calculate autonomic dysregulation
+data_tilt.ortho_clust <- data_tilt.ortho_clust |> 
+  mutate(
+    grp4_cluster = as.factor(clust_grp),
+    #grp2_cluster = as.factor(sub_grp2),
+    # AD tilt (objective)
+    AD = ifelse(
+      # Decrease in DBP of at least 10 mm Hg
+      (TiltStandingDBP - TiltLyingDBP)<=-10 |
+      (StandingDBP_1_Minute-TiltLyingDBP)<=-10 |
+      (StandingDBP_2_Minute - TiltLyingDBP)<=-10 | 
+      (StandingDBP_3_Minute - TiltLyingDBP)<=-10 | 
+      # Decrease in SBP of at least 20 mm Hg
+      (TiltStandingSBP - TiltLyingSBP)<=-20 |
+      (StandingSBP_1_Minute-TiltLyingSBP)<=-20 |
+      (StandingSBP_2_Minute - TiltLyingSBP)<=-20 | 
+      (StandingSBP_3_Minute - TiltLyingSBP)<=-20 | 
+      # Increase in HR of at least 40 bpm (ages 16-19) or 30 bpm (ages 19+)
+      (Age>19 & (TiltStandingHR - TiltLyingHR)>=30) |
+      (Age>19 & 
+        (StandingHR_1_Minute-TiltLyingHR )>=30) |
+      (Age>19 & 
+        (StandingHR_2_Minute - TiltLyingHR )>=30) | 
+      (Age>19 & 
+        (StandingHR_3_Minute - TiltLyingHR )>=30) | 
+      (Age<=19 & (TiltStandingHR - TiltLyingHR )>=40) |
+      (Age<=19 & (StandingHR_1_Minute-TiltLyingHR)>=40) |
+      (Age<=19 & 
+        (StandingHR_2_Minute - TiltLyingHR)>=40) |
+      (Age<=19 & 
+        (StandingHR_3_Minute - TiltLyingHR)>=40), 1, 0),
+    # AD (subjective)
+    AD_subjective = case_when(symptom_provocation == 1 | 
+      symptom_exacerbation == 1 ~ 1, 
+      TRUE ~0),
+    education = case_when(
+      education_code == 1 ~ "Never attended / Kindergarten only",
+      education_code == 2 ~ "1st Grade",
+      education_code == 3 ~ "2nd Grade",
+      education_code == 4 ~ "3rd Grade",
+      education_code == 5 ~ "4th Grade",
+      education_code == 6 ~ "5th Grade",
+      education_code == 7 ~ "6th Grade",
+      education_code == 8 ~ "7th Grade",
+      education_code == 9 ~ "8th-12th Grade",
+      education_code == 10 ~ "8th-12th Grade",
+      education_code == 11 ~ "8th-12th Grade",
+      education_code == 12 ~ "8th-12th Grade",
+      education_code == 13 ~ "8th-12th Grade",
+      education_code == 14 ~ "OAC/13th Grade",
+      education_code == 15 ~ "High school graduate",
+      education_code == 16 ~ "CEGEP Year 1",
+      education_code == 17 ~ "Some college/University",
+      education_code == 18 ~ "GED or equivalent",
+      education_code == 19 ~ "Some college/University",
+      education_code == 20 ~ "Some college/University",
+      education_code == 21 ~ "Some college/University",
+      education_code == 22 ~ "Bachelor's degree",
+      education_code == 23 ~ "MSc/PhD degree",
+      education_code == 24 ~ "Professional school degree",
+      education_code == 25 ~ "MSc/PhD degree",
+      education_code == 9999 ~ "Do not know",
+      TRUE ~ NA_character_),
+    education = factor(education, levels=c(
+      "8th-12th Grade",
+      "High school graduate",
+      "Some college/University",
+      "Bachelor's degree",
+      "MSc/PhD degree",
+      "Professional school degree"
+    )),
+    n_symp_lying = as.numeric(n_symp_lying),
+    n_symp_standing_0min = as.numeric(n_symp_standing_0min),
+    n_symp_standing_1min = as.numeric(n_symp_standing_1min),
+    n_symp_standing_2min = as.numeric(n_symp_standing_2min),
+    n_symp_standing_3min = as.numeric(n_symp_standing_3min)
+  )
+
+# Table 1 stratified by cluster
+table1 <- data_tilt.ortho_clust  |> 
+   select(
+    Age,
+    Sex,
+    `Days since injury`,
+    Migraines,
+    Anxiety,
+    SCAT5SymptmEvalTotSymptmScore,
+    symptom_provocation,
+    symptom_exacerbation,
+    S1_SDNN:S2_RMSSD,
+    grp4_cluster,
+    AD,
+    AD_subjective
+   ) 
+
+table_cluster <- table1 |>
+  tbl_summary(
+    by = grp4_cluster,  # Splits by grp cluster
+    type = list(
+      all_continuous() ~ "continuous2"
+    ),
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      Age = "Age, years",
+      Sex = "Female",
+      SCAT5SymptmEvalTotSymptmScore = "Symptom score (0-132)",
+      AD = "Autonomic dysregulation (vitals)",
+      AD_subjective = "Autonomic dysregulation (symptom provocation)"
+    ),
+    missing_text = "Missing"
+  ) |> 
+  add_p()  |> 
+  add_overall()
+
+# print table
+table_cluster
+```
+
+# Figures to visualize and explore the clustering
+
+## Dendogram
+
+```{r dendogram}
+dend <- as.dendrogram(hc_tilt)
+d1=color_branches(dend,k=cluster_size, col = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
+par(mfrow=c(1,1))
+plot(d1)
+```
+
+## 2-D spacial plot
+
+```{r 2D plot}
+fviz_cluster(list(data = scale_tilt.ortho, 
+  cluster = clust_grp),
+  palette = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
+```
+
+## Radar plot
+
+```{r radar plot }
+radar_dat <- table1 |> 
+  select(
+    
+    SCAT5SymptmEvalTotSymptmScore,
+    symptom_exacerbation,
+    Sex,
+    `Days since injury`,
+    
+    Anxiety,
+    Migraines,
+    symptom_provocation,
+    S1_SDNN,
+    S1_RMSSD,
+    Age,
+    AD,
+    AD_subjective,
+    grp4_cluster
+  ) |> 
+  rename(
+    Female = Sex,
+    `Pre-existing anxiety` = Anxiety,
+    `Pre-existing migraines` = Migraines,
+    `Symptom score` = SCAT5SymptmEvalTotSymptmScore,
+    `Tilt: symptom provocation` = symptom_provocation,
+    `Tilt: symptom exacerbation` = symptom_exacerbation,
+    `Pre-tilt: SDNN` = S1_SDNN,
+    `Pre-tilt: RMSSD` = S1_RMSSD
+    ) 
+
+radar_dat <- radar_dat |> 
+  group_by(grp4_cluster) |> 
+  summarise(across(everything(), mean)) |> #~ mean(.x, na.rm = TRUE)) |> 
+  ungroup() |> 
+   mutate_at(vars(-grp4_cluster), rescale)
+
+radar_plot <- radar_dat |> 
+  ggradar(
+    group.colours = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"),
+    fill = T,
+    legend.title = "Cluster"
+)
+
+radar_plot
+
+```
+
+## Heatmap
+
+```{r}
+# select data of interest
+scale_tilt.ortho_clust_subset <- scale_tilt.ortho_clust |> 
+  select(Age, Sex, `Days since injury`, SCAT5SymptmEvalTotSymptmScore,
+    Migraines, Anxiety, TiltLyingHR,
+    symptom_exacerbation, symptom_provocation,
+    S1_SDNN, S1_RMSSD, clust_grp
+    )
+
+scale_tilt.ortho_clust_subset_mtrx <- scale_tilt.ortho_clust_subset |> 
+  group_by(clust_grp) |> 
+  summarise(
+    Age                 = round(mean(Age),3),
+    Female              = round(mean(Sex),3),
+    `Days since injury` = round(mean(`Days since injury`),3),
+    `Symptom score`     = round(mean(SCAT5SymptmEvalTotSymptmScore),3),
+    Migraines           = round(mean(Migraines),3),
+    Anxiety             = round(mean(Anxiety),3),
+    `Heart Rate (rest)` = round(mean(TiltLyingHR),3),
+    `Symptom exacerbation` = round(mean(symptom_exacerbation),3),
+    `Symptom provocation` = round(mean(symptom_provocation),3),
+    `Pre-tilt SDNN`     = round(mean(S1_SDNN),3),
+    `Pre-tile RMSSD`    = round(mean(S1_RMSSD),3),
+    .groups="keep") |> 
+  ungroup() 
+
+scale_tilt.ortho_clust_subset_mtrx_long <- scale_tilt.ortho_clust_subset_mtrx |> 
+  pivot_longer(!clust_grp, names_to = "variable", values_to = "mean") |> 
+  mutate(
+    variable = as.factor(variable),
+    cluster = as.factor(clust_grp)
+  )
+
+ggplot(scale_tilt.ortho_clust_subset_mtrx_long, 
+  aes(x=cluster, 
+    y=variable, fill=mean)) + 
+  geom_tile() + 
+  scale_fill_gradient2(low = "#56B4E9",
+                       mid = "#FFFFCC",
+                       high = "#CC79A7") 
+
+```
+
+## AD figure
+
+```{r}
+sd_gts <- function(data, variable, ...) {
+  sd(data[[variable]], na.rm = TRUE)
+}
+# Pre-calculate means and sds and ll and il ci's then use ggplot precomputed stats 
+for_fig <- data_tilt.ortho_clust |>
+  select(
+    TiltLyingHR,
+    TiltStandingHR,
+    StandingHR_1_Minute,
+    StandingHR_2_Minute,
+    StandingHR_3_Minute,
+    clust_grp) |> 
+  bind_cols(record_id) |> 
+  rename(
+    `0` = TiltLyingHR,
+    `1` = TiltStandingHR,
+    `2` = StandingHR_1_Minute,
+    `3` = StandingHR_2_Minute,
+    `4` = StandingHR_3_Minute
+    )
+
+record_id_subgrp <- for_fig |> 
+  select(record_id, clust_grp)
+
+for_fig_HR <- for_fig |> 
+  select(-clust_grp) |> 
+  pivot_longer(!record_id, names_to = "time", values_to = "HR") |> 
+  mutate(
+    time = as.factor(time)
+  ) |> 
+  left_join(record_id_subgrp, by="record_id") |> 
+  group_by(time, clust_grp) |> 
+  summarise(
+    HR_mean   = round(mean(HR),2),
+    HR_sd     = round(sd(HR),2)
+  ) |> 
+  ungroup()|> 
+  mutate(
+    n = case_when(
+      clust_grp == 1 ~ 120,
+      clust_grp == 2 ~ 81,
+      clust_grp == 3 ~ 38,
+      clust_grp == 4 ~ 27
+      ),
+    HR_margin = qt(0.975,df=n-1)*HR_sd/sqrt(n),
+    HR_ll     = round(HR_mean - HR_margin,2),
+    HR_ul     = round(HR_mean + HR_margin,2),
+    clust_grp = factor(clust_grp),
+    time = factor(time, levels=c("0", "1", "2", "3", "4"), 
+      labels=c(
+        "Rest",
+        "0", "1", "2", "3"
+      ))
+  ) 
+
+pos_jit <- position_jitter(width = 0.05, height = 0.01, seed = 123)
+colScale <- scale_colour_manual(name = "Cluster",values = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
+
+fig <- ggplot(for_fig_HR, 
+  aes(x = time, y = HR_mean, 
+    colour=clust_grp, 
+    group = clust_grp)) +
+  geom_errorbar(aes(ymin = HR_ll, ymax = HR_ul), 
+    width = 0.05, 
+    position = pos_jit) +
+  geom_point(shape = 'square', size = 2, position = pos_jit) +
+  geom_line() + # position = pos_jit
+  geom_jitter(position = pos_jit) +
+  theme_classic() +
+  xlab('Time (mins)') +
+  ylab('Mean heart rate (bpm)') +
+  colScale 
+fig
+
+```
