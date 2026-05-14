@@ -1,8 +1,8 @@
 ---
-title: "20250052 - Kutcher/Sicard - CfA"
+title: ADVISING - Kutcher/Sicard - Centre for Analytics"
 subtitle: ""
 author: 'S. Kutcher, V. Sicard, A. Dodd (ft. R. Belaghi)  -- `r strftime(Sys.time(),format="%d-%b-%Y at %H:%M")`'
-date: '`r knitr::current_input(dir = TRUE)` -- `r CRUmisc::showSVNversion()`'
+date: '`r knitr::current_input(dir = TRUE)`'
 always_allow_html: true
 params:
   fastknit: FALSE
@@ -10,12 +10,6 @@ output:
   word_document:
    reference_docx: templateLandscape8ptArialNarrowMargins.docx
 ---
-```{r, include=FALSE}
-# knitting code
-library(CRUmisc)
-library(CRUmarkdown)
-library(here)
-```
 
 ```{r, message=FALSE}
 # libraries
@@ -40,10 +34,7 @@ knitr::opts_chunk$set(echo=FALSE,warning=FALSE,comment="##",dpi=4*72,fig.width=9
 knitr::opts_knit$set(output.dir = ".")
 options(knitr.duplicate.label = 'allow')
 
-output <- knitchild(here("Analysis","prepareData.Rmd"))
 ```
-
-`r output`
 
 ```{r flextableSetting, include=FALSE}
 set_flextable_defaults(
@@ -51,8 +42,6 @@ set_flextable_defaults(
   border.color = "Black",
   padding.bottom=1, padding.top=1, line_spacing = 1)
 ```
-
-
 
 ```{r filter tilt data, include=F, message=F}
 data_tilt.ortho <- cfa_working_dat |> # nrows = 2611(n=2345); ncols = 1240
@@ -149,10 +138,13 @@ data_tilt.ortho <- data_tilt.ortho|>
 
 ```{r data preparation}
 ## Data preparation
+### number of participants
 nrow(data_tilt.ortho) # number of participants = 266
+
+### number of variables avilable
 ncol(data_tilt.ortho) # number of columns = 80
 
-# identify columns with low variance (sparse data)
+# identify and remove columns with low variance (sparse data)
 remove_columns <- nearZeroVar(data_tilt.ortho)
 # drop those columns
 data_tilt.ortho <- data_tilt.ortho |> 
@@ -162,7 +154,7 @@ data_tilt.ortho <- data_tilt.ortho |>
     )
 
 ### N = 266; columns = 41
-## print first 5 rows and 10 columns
+## print the first 5 rows and 10 columns
 data_tilt.ortho[1:5, 1:10]
 
 # Scale the data for ML modelling 
@@ -568,7 +560,7 @@ ggplot(scale_tilt.ortho_clust_subset_mtrx_long,
 
 ## AD figure
 
-```{r}
+```{r, message=F}
 sd_gts <- function(data, variable, ...) {
   sd(data[[variable]], na.rm = TRUE)
 }
