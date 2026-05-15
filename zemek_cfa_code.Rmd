@@ -1,5 +1,5 @@
 ---
-title: ADVISING - Kutcher/Sicard - Centre for Analytics"
+title: "ADVISING - Kutcher/Sicard - Centre for Analytics"
 subtitle: ""
 author: 'S. Kutcher, V. Sicard, A. Dodd (ft. R. Belaghi)  -- `r strftime(Sys.time(),format="%d-%b-%Y at %H:%M")`'
 date: '`r knitr::current_input(dir = TRUE)`'
@@ -10,6 +10,8 @@ output:
   word_document:
    reference_docx: templateLandscape8ptArialNarrowMargins.docx
 ---
+
+# R Packages
 
 ```{r, message=FALSE}
 # libraries
@@ -36,14 +38,17 @@ options(knitr.duplicate.label = 'allow')
 
 ```
 
-```{r flextableSetting, include=FALSE}
+
+```{r flextableSetting, include=FALSE, echo=F}
 set_flextable_defaults(
   font.family = "Arial", font.size = 10, 
   border.color = "Black",
   padding.bottom=1, padding.top=1, line_spacing = 1)
 ```
 
-```{r filter tilt data, include=F, message=F}
+
+
+```{r filter tilt data, include=F, message=F, echo=F}
 data_tilt.ortho <- cfa_working_dat |> # nrows = 2611(n=2345); ncols = 1240
   filter(complete_ortho_tilt=="Yes" ) |> 
   select(
@@ -134,17 +139,21 @@ data_tilt.ortho <- data_tilt.ortho|>
 #   select(record_id)
 ```
 
+#########
+
 # Data preparation
 
-```{r data preparation}
-## Data preparation
-### number of participants
-nrow(data_tilt.ortho) # number of participants = 266
+```{r data preparation, echo=T}
+# Data preparation
+n.row <- nrow(data_tilt.ortho) # number of participants = 266
+n.col <- ncol(data_tilt.ortho) # number of columns = 80
 
-### number of variables avilable
-ncol(data_tilt.ortho) # number of columns = 80
+print(c('Number of participants', n.row))
+print(c('Number of variables', n.col))
+```
 
-# identify and remove columns with low variance (sparse data)
+```{r, echo=T}
+# identify columns with low variance (sparse data)
 remove_columns <- nearZeroVar(data_tilt.ortho)
 # drop those columns
 data_tilt.ortho <- data_tilt.ortho |> 
@@ -153,23 +162,34 @@ data_tilt.ortho <- data_tilt.ortho |>
     -c(Mechanism:`Loss of consciousness`)
     )
 
-### N = 266; columns = 41
-## print the first 5 rows and 10 columns
-data_tilt.ortho[1:5, 1:10]
+# N = 266; columns = 41
+n.row <- nrow(data_tilt.ortho) # number of participants = 266
+n.col <- ncol(data_tilt.ortho) # number of columns = 80
+
+print(c('Number of participants', n.row))
+print(c('Number of variables', n.col))
+
+# print first 5 rows and 6 columns
+data_tilt.ortho[1:5, 1:6]
 
 # Scale the data for ML modelling 
 scale_tilt.ortho <- as.data.frame(scale(data_tilt.ortho))
 
+# print first 5 rows and 6 columns
+scale_tilt.ortho[1:5, 1:6]
+
 ```
+
+#########
 
 ## Results
 
 ### Table 1: Study population characteristics 
 
-```{r description table}
+```{r description table, echo=T}
 # create a table of participant characteristics
-## prepare table 1 data
-## calculate autonomic dysregulation outcome & rename education levels for presentation simplicity
+# prepare table 1 data
+# calculate autonomic dysregulation outcome & rename education levels for presentation simplicity
 table_1_dat <- data_tilt.ortho |> 
   mutate(
     # AD tilt (objective)
@@ -274,17 +294,19 @@ table1 <- table_1_dat  |>
 table1
 ```
 
-## Analysis portion
+#########
 
-```{r nbclust}
-## NbClust function: to determine the best partition to optimize of the number of clusters
+## Analysis: Hierarchical agglomerative clustering 
+
+```{r nbclust, echo=T, fig.show='hide', message=F}
+# NbClust function: to determine the best partition to optimize of the number of clusters
 res_nbclust <- NbClust(scale_tilt.ortho, 
   distance = "euclidean", 
   min.nc=2, max.nc=10, 
   method = "ward.D2", 
   index = "alllong")
 
-# store the most frequently recommended cluster size
+# identify and store the most frequently recommended cluster size
 out_nbclust <- as.data.frame(res_nbclust$Best.nc) |> 
   slice(1) |> 
   pivot_longer(
@@ -295,40 +317,41 @@ out_nbclust <- as.data.frame(res_nbclust$Best.nc) |>
 cluster_size = as.numeric(names(sort(-table(out_nbclust$cluster)))[1])
 ```
 
-```{r hierarchical clustering}
+```{r hierarchical clustering, echo=T}
 # Run the hierarchical agglomerative clustering machine learning model
-## Create a dissimilarity matrix
+# Create a dissimilarity matrix
 d2 <- dist(scale_tilt.ortho, method = "euclidean")
 
-## Hierarchical agglomerative clustering using Ward's D2 method
+# Hierarchical agglomerative clustering using Ward's D2 method
 hc_tilt <- hclust(d2, method = "ward.D2" )
 
-## Cut the clustering tree into the number of groups from NbClust()
+# Cut the clustering tree into the number of groups from NbClust()
 clust_grp <- cutree(hc_tilt, k = cluster_size)
 
 ```
 
-```{r}
-## store subgroup results in a dataframe
+```{r, echo=T}
+# store subgroup results in a dataframe
 clust_grp_dat <- as.data.frame(clust_grp)
 
-## store the clustering results in the unscaled and scaled data sets
+# store the clustering results in the unscaled and scaled data sets
 data_tilt.ortho_clust <- data_tilt.ortho |> 
   bind_cols(clust_grp_dat)
 
-## store in scaled data
+# store in scaled data
 scale_tilt.ortho_clust <- scale_tilt.ortho |> 
   bind_cols(clust_grp_dat)
 ```
 
+#########
+
 # Table of patient characteristics by the clustering levels
 
-```{r}
-## calculate autonomic dysregulation
+```{r, echo=T}
+# calculate autonomic dysregulation
 data_tilt.ortho_clust <- data_tilt.ortho_clust |> 
   mutate(
     grp4_cluster = as.factor(clust_grp),
-    #grp2_cluster = as.factor(sub_grp2),
     # AD tilt (objective)
     AD = ifelse(
       # Decrease in DBP of at least 10 mm Hg
@@ -445,28 +468,37 @@ table_cluster <- table1 |>
 table_cluster
 ```
 
+#########
+
 # Figures to visualize and explore the clustering
 
 ## Dendogram
 
-```{r dendogram}
+```{r dendogram, echo=T}
 dend <- as.dendrogram(hc_tilt)
-d1=color_branches(dend,k=cluster_size, col = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
+d1=color_branches(dend, 
+  k=cluster_size, 
+  col = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
 par(mfrow=c(1,1))
 plot(d1)
 ```
 
+#########
+
 ## 2-D spacial plot
 
-```{r 2D plot}
+```{r 2D plot, echo=T}
 fviz_cluster(list(data = scale_tilt.ortho, 
   cluster = clust_grp),
   palette = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
 ```
 
+#########
+
 ## Radar plot
 
-```{r radar plot }
+```{r radar plot, echo=T }
+# radar plot data
 radar_dat <- table1 |> 
   select(
     
@@ -474,7 +506,6 @@ radar_dat <- table1 |>
     symptom_exacerbation,
     Sex,
     `Days since injury`,
-    
     Anxiety,
     Migraines,
     symptom_provocation,
@@ -498,24 +529,26 @@ radar_dat <- table1 |>
 
 radar_dat <- radar_dat |> 
   group_by(grp4_cluster) |> 
-  summarise(across(everything(), mean)) |> #~ mean(.x, na.rm = TRUE)) |> 
+  summarise(across(everything(), mean)) |> 
   ungroup() |> 
    mutate_at(vars(-grp4_cluster), rescale)
-
+# radar plot
 radar_plot <- radar_dat |> 
   ggradar(
     group.colours = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"),
     fill = T,
     legend.title = "Cluster"
 )
-
+# display plot
 radar_plot
 
 ```
 
+#########
+
 ## Heatmap
 
-```{r}
+```{r, echo=T}
 # select data of interest
 scale_tilt.ortho_clust_subset <- scale_tilt.ortho_clust |> 
   select(Age, Sex, `Days since injury`, SCAT5SymptmEvalTotSymptmScore,
@@ -523,7 +556,7 @@ scale_tilt.ortho_clust_subset <- scale_tilt.ortho_clust |>
     symptom_exacerbation, symptom_provocation,
     S1_SDNN, S1_RMSSD, clust_grp
     )
-
+# reformat
 scale_tilt.ortho_clust_subset_mtrx <- scale_tilt.ortho_clust_subset |> 
   group_by(clust_grp) |> 
   summarise(
@@ -540,14 +573,14 @@ scale_tilt.ortho_clust_subset_mtrx <- scale_tilt.ortho_clust_subset |>
     `Pre-tile RMSSD`    = round(mean(S1_RMSSD),3),
     .groups="keep") |> 
   ungroup() 
-
+# pivot data long
 scale_tilt.ortho_clust_subset_mtrx_long <- scale_tilt.ortho_clust_subset_mtrx |> 
   pivot_longer(!clust_grp, names_to = "variable", values_to = "mean") |> 
   mutate(
     variable = as.factor(variable),
     cluster = as.factor(clust_grp)
   )
-
+# heat mapping plot
 ggplot(scale_tilt.ortho_clust_subset_mtrx_long, 
   aes(x=cluster, 
     y=variable, fill=mean)) + 
@@ -558,9 +591,11 @@ ggplot(scale_tilt.ortho_clust_subset_mtrx_long,
 
 ```
 
+#########
+
 ## AD figure
 
-```{r, message=F}
+```{r, message=F, echo=T}
 sd_gts <- function(data, variable, ...) {
   sd(data[[variable]], na.rm = TRUE)
 }
@@ -619,7 +654,7 @@ for_fig_HR <- for_fig |>
 pos_jit <- position_jitter(width = 0.05, height = 0.01, seed = 123)
 colScale <- scale_colour_manual(name = "Cluster",values = c("#E69F00","#56B4E9", "#009E73", "#CC79A7"))
 
-fig <- ggplot(for_fig_HR, 
+figure <- ggplot(for_fig_HR, 
   aes(x = time, y = HR_mean, 
     colour=clust_grp, 
     group = clust_grp)) +
@@ -633,6 +668,7 @@ fig <- ggplot(for_fig_HR,
   xlab('Time (mins)') +
   ylab('Mean heart rate (bpm)') +
   colScale 
-fig
 
+# print figure
+figure
 ```
