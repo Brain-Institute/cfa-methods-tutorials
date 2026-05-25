@@ -1,0 +1,3 @@
+# Dependencies for Methods_Tutorial_WER.ipynb
+jiwer>=3.0.0
+matplotlib>=3.7.0
