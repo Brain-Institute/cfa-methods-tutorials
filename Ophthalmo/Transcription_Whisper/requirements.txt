@@ -1,0 +1,8 @@
+# Dependencies for Methods_Tutorial_Transcription.ipynb
+torch>=2.0.0
+transformers>=4.39.0
+accelerate>=0.26.0
+soundfile>=0.12.0
+scipy>=1.10.0
+numpy>=1.24.0
+matplotlib>=3.7.0
