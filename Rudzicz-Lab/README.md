@@ -21,7 +21,7 @@ Visit-based MADRS is sparse. Daily sleep/activity summaries and session-level sp
 | Actigraphy + MADRS | CAN-BIND / CBN-WELL (Brain-CODE) | Minute-level wear, six daily features, MADRS totals, relapse fields `CNSR` and `ADT` |
 | Voice | CBN-WELL (Brain-CODE) | Task recordings and SRI quality metrics |
 
-Access to the real cohort is through Brain-CODE and the study PIs. **Do not place raw or derived patient-level CAN-BIND data in this public repository.** Content in this tutorial follows the CC BY 4.0 license used by the CfA Methods Tutorials repository.
+Access to the real cohort is through Brain-CODE and the study PIs. Content in this tutorial follows the CC BY 4.0 license used by the CfA Methods Tutorials repository.
 
 `test_data/` contains invented IDs (`SYN_001` … `SYN_010`), dates, scores, SRI-shaped QC rows, and synthetic transcripts. Table structures mirror those used by the analysis; values are not real. The actigraphy tables are sized so the stable-manifold KNN can use **k = 20** without clipping.
 
