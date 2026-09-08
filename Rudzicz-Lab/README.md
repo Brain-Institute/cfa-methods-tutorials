@@ -1,4 +1,4 @@
-# Rudzicz Lab — CfA Methods Tutorial
+# Dr. Rudzicz Lab — CfA Methods Tutorial
 
 **Project:** Continuous monitoring for depression relapse using longitudinal actigraphy and speech.
 
@@ -6,20 +6,20 @@
 
 **Date:** September 2026
 
-People with remitted major depression remain at risk of relapse. MADRS is collected at clinic visits, while wearable activity and speech can be collected more frequently and may provide signals of change between clinical assessments. We analyzed both streams in the CAN-BIND / CBN-WELL cohort (Brain-CODE). The primary predictive model uses actigraphy; speech is treated as a separate quality-control and exploratory marker pipeline.
+People with remitted major depression remain at risk of relapse. MADRS is collected at clinic visits, while wearable activity and speech can be collected more frequently and may provide signals of change between clinical assessments. We analyzed both streams in the CAN-BIND / CBN-WELL cohort (Brain-CODE). The primary predictive model uses actigraphy; speech is treated as a separate quality-control, transcription, and exploratory linguistic-marker pipeline.
 
 This folder provides a compact, reproducible tutorial version of the analysis. The annotated notebooks run entirely on synthetic data in `test_data/`; no CAN-BIND participant identifiers or Brain-CODE data are included. The synthetic actigraphy example contains 10 invented participants and 80 visits.
 
 ## Motivation
 
-Visit-based MADRS is sparse. Daily sleep/activity summaries and session-level speech can be aligned to clinical visits to support monitoring between assessments. The actigraphy model learns a stable embedding region and scores how far a new visit lies from that region. The speech pipeline is QC-first and applies task-specific quality criteria before marker analysis.
+Visit-based MADRS is sparse. Daily sleep/activity summaries and repeated speech recordings can provide information between clinical assessments. The actigraphy model learns a stable embedding region and scores how far a new visit lies from that region. The speech analysis follows a separate path: task-specific quality control, transcription of usable free-speech recordings, and exploratory linguistic-marker analysis.
 
 ## Data
 
 | Stream | Study source | What the analysis used |
 |---|---|---|
 | Actigraphy + MADRS | CAN-BIND / CBN-WELL (Brain-CODE) | Minute-level wear, six daily features, MADRS totals, relapse fields `CNSR` and `ADT` |
-| Voice | CBN-WELL (Brain-CODE) | Task recordings and SRI quality metrics |
+| Voice | CBN-WELL (Brain-CODE) | Sustained-vowel and speech-task recordings, SRI quality metrics, and transcripts of usable free-speech recordings |
 
 Access to the real cohort is through Brain-CODE and the study PIs. Content in this tutorial follows the CC BY 4.0 license used by the CfA Methods Tutorials repository.
 
@@ -48,9 +48,24 @@ In the executed analysis, relapse status is taken from the study relapse file, w
 
 ### Speech
 
-1. Apply task-specific QC using SRI metrics. Sustained-vowel QC does **not** use `SADSPEECHEXISTS`; it uses RMS, SNR, clipping, and duration.
-2. In the original analysis, acoustic features were computed only for recordings that passed task-specific QC. This tutorial demonstrates the QC logic using synthetic SRI-shaped tables rather than loading audio.
-3. Use Whisper transcripts from valid free-speech tasks for linguistic-marker analysis. **Negation ratio** counts explicit negation forms (`not`, `n't`, `never`, `couldn't`, etc.) over tokens. **Negative emotion** is a separate lexicon-based feature; a negator can suppress the next emotion-word count without changing the negation ratio.
+1. Focus on two recording streams used in the speech analysis:
+   - **sustained vowel** (`/a/` for at least 5 seconds)
+   - **free speech** describing physical condition, mental condition, or a happy event (at least 30 seconds)
+
+   Read speech and automatic speech (counting / alphabet) were also collected and are included in the QC logic.
+
+2. Apply task-specific QC using SRI metrics:
+   - sustained vowel: RMS, SNR, clipping, and duration; `SADSPEECHEXISTS` is **not** used as a vowel criterion
+   - free speech: speech activity detected, duration ≥30 s, SNR ≥10 dB, clipping ≤10%, and single speaker
+   - read / counting tasks: speech activity detected, duration 20–120 s, SNR ≥10 dB, clipping ≤10%, and single speaker
+
+3. In the original analysis, approximately **9000** task recordings were processed and about **58%** were usable after QC. About **3000 recordings** were transcribed with Whisper. This tutorial does not redistribute audio and does not call Whisper; it uses synthetic SRI-shaped QC rows and invented transcripts.
+
+4. Eight exploratory psychological and linguistic markers were examined, including first-person language, emotion, and absolutist language. The clearest preliminary linguistic signal closer to relapse was **negation ratio**: explicit negation forms such as `not`, `n't`, `never`, `cannot`, `couldn't`, `wouldn't`, and `shouldn't`, divided by the number of tokens.
+
+5. **Negative emotion** is shown only as a secondary lexicon example. If a negator immediately precedes an emotion word, that emotion hit can be skipped without changing the negation-ratio calculation.
+
+The speech analysis is exploratory and is not a validated relapse classifier. The synthetic example demonstrates the QC and marker calculations; it does not reproduce the cohort-level time-to-relapse result.
 
 ## Repository layout
 
@@ -70,7 +85,7 @@ Rudzicz-Lab/
 | File | Role |
 |---|---|
 | `01_actigraphy_relapse_model.ipynb` | Relapse zones, six features, 7/14/28-day aggregation, contrastive encoder, KNN with k = 20, and risk trajectories |
-| `02_speech_qc_and_markers.ipynb` | Task-specific QC, including the fact that SAD is not a vowel criterion, followed by negation-ratio and negative-emotion marker analysis |
+| `02_speech_qc_and_markers.ipynb` | Speech-task QC, synthetic transcript filtering, and exploratory linguistic markers with negation ratio as the main speech signal |
 | `test_data/` | Synthetic demonstrative tables only |
 
 ## Setup
