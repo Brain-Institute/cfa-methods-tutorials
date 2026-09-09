@@ -1,9 +1,8 @@
 # Dr. Rudzicz Lab — CfA Methods Tutorial
 
-**Project:** Continuous monitoring for depression relapse using longitudinal actigraphy and speech.
-
-**Lab:** Rudzicz Lab (Dalhousie University / Vector Institute)
-
+**Authors:** Elahe Rahimi and Dr. Frank Rudzicz  
+**Lab:** Dr. Rudzicz Lab (Dalhousie University / Vector Institute)  
+**Contact:** Elahe Rahimi — [erahimi@dal.ca]  
 **Date:** September 2026
 
 People with remitted major depression remain at risk of relapse. MADRS is collected at clinic visits, while wearable activity and speech can be collected more frequently and may provide signals of change between clinical assessments. We analyzed both streams in the CAN-BIND / CBN-WELL cohort (Brain-CODE). The primary predictive model uses actigraphy; speech is treated as a separate quality-control, transcription, and exploratory linguistic-marker pipeline.
