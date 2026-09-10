@@ -1,0 +1,11 @@
+FILE,patient_id,task,SADSPEECHEXISTS,SIGNALRMS,SIGNALSNR,PERCENTCLIPPED,DURATIONSECONDS,MULTISPEAKER
+20180501_SYN001_ReadSpeech.wav,SYN_001,ReadSpeech,1,1400,18,1.0,42,0
+20180501_SYN001_AutomaticSpeech.wav,SYN_001,AutomaticSpeech,1,1100,16,0.5,38,0
+20180501_SYN001_SustainedVowel.wav,SYN_001,SustainedVowel,0,1200,18,1.0,6,0
+20180501_SYN002_SustainedVowel.wav,SYN_002,SustainedVowel,0,200,12,0.0,7,0
+20180501_SYN001_MentalCondition.wav,SYN_001,MentalCondition,1,900,15,0.0,45,0
+20180720_SYN002_MentalCondition.wav,SYN_002,MentalCondition,1,800,8,0.0,40,0
+20180418_SYN003_MentalCondition.wav,SYN_003,MentalCondition,1,1000,20,0.2,52,0
+20180418_SYN003_HappyEvent.wav,SYN_003,HappyEvent,1,950,19,0.0,36,0
+20180607_SYN004_PhysicalCondition.wav,SYN_004,PhysicalCondition,0,700,14,2.0,35,0
+20180607_SYN004_MentalCondition.wav,SYN_004,MentalCondition,1,880,17,0.0,41,1

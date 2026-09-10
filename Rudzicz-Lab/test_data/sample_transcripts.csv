@@ -1,0 +1,6 @@
+patient_id,date,task,duration_seconds,transcript
+SYN_001,2018-05-01,MentalCondition,45,"I am not sleeping well. I never feel rested and I always wake up tired. Nothing seems to help and I do not enjoy anything I used to like."
+SYN_002,2018-07-20,MentalCondition,40,"I feel completely stuck. I cannot stop thinking about everything that went wrong. I am sad all the time and I have no energy."
+SYN_003,2018-04-18,MentalCondition,52,"I have been feeling pretty stable. Sleep is okay and I am not hopeless. I went for a walk and I enjoyed the weather."
+SYN_003,2018-04-18,HappyEvent,36,"Last weekend I visited my sister. We cooked dinner and I felt really happy. I am looking forward to seeing her again."
+SYN_004,2018-06-07,MentalCondition,41,"Some days are harder than others but I am managing. I try to keep a routine and I do not feel completely lost."
