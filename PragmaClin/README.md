@@ -23,7 +23,7 @@ The project was developed by **PragmaClin Research Inc.** as part of its work on
 
 ### Making the invisible measurable
 
-[**PragmaClin Research Inc.**](https://www.pragmaclin.com) is a clinical research technology company headquartered in St. John's, Newfoundland and Labrador, with an office in Portland, Maine. Its work is aligned with **United Nations Sustainable Development Goals 3 (Good Health and Well-being) and 10 (Reduced Inequalities)**.
+[**PragmaClin Research Inc.**](https://www.pragmaclin.com) is a clinical research technology company headquartered in St. John's, Newfoundland and Labrador, with an office in Portland, Maine. Its work is aligned with United Nations Sustainable Development Goals 3 (Good Health and Well-being) and 10 (Reduced Inequalities).
 
 ### The problem
 
