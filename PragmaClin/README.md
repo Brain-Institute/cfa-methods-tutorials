@@ -20,6 +20,7 @@ The project was developed by **PragmaClin Research Inc.** as part of its work on
 ---
 
 ## About PragmaClin
+<img width="220"  alt="PragmaClin-Logo 2026" src="https://github.com/user-attachments/assets/0d7b412f-5c2f-4549-9c9a-ef0827af55a4" />
 
 ### Making the invisible measurable
 
