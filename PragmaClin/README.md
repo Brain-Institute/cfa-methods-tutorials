@@ -191,7 +191,7 @@ No participant data is included in this repository. Do not commit identifiable, 
 
 ## License and intellectual property
 
-Unless a separate license file states otherwise, the presence of this README does not grant permission to reuse, distribute, or commercially exploit the repository's code, methods, or associated intellectual property. Contact PragmaClin Research Inc. for licensing or collaboration enquiries.
+All content within this repository is protected under the Creative Commons Attribution 4.0 International License (CC BY 4.0). For more details, please refer to the full text of the Creative Commons Attribution 4.0 International License available at [Creative Commons](https://creativecommons.org/licenses/by/4.0/deed.en).
 
 ---
 
