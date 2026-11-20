@@ -22,59 +22,28 @@ The project was developed by **PragmaClin Research Inc.** as part of its work on
 ## About PragmaClin
 <img width="220"  alt="PragmaClin-Logo 2026" src="https://github.com/user-attachments/assets/0d7b412f-5c2f-4549-9c9a-ef0827af55a4" />
 
-### Making the invisible measurable
+[**PragmaClin Research Inc.**](https://www.pragmaclin.com) is a Canadian clinical research technology company headquartered in St. John's, Newfoundland and Labrador, with an office in Portland, Maine. PragmaClin is developing tools to support more objective and accessible neurological assessments, and working with clinical and academic partners to explore how computer vision, machine learning, and digital technologies can support the measurement of neurological symptoms.
 
-[**PragmaClin Research Inc.**](https://www.pragmaclin.com) is a clinical research technology company headquartered in St. John's, Newfoundland and Labrador, with an office in Portland, Maine. Its work is aligned with United Nations Sustainable Development Goals 3 (Good Health and Well-being) and 10 (Reduced Inequalities).
-
-### The problem
-
-Neurological care can be subjective, inconsistent, and inaccessible. Movement symptoms are often scored by visual observation, and two clinicians observing the same patient may reach different conclusions. Many patients also have limited access to specialist assessment.
-
-### The solution: PRIMS®
-
-**PRIMS®** is a contactless clinical movement-assessment platform. It uses depth-sensing cameras and machine learning to turn standardized movement examinations into objective, quantitative information that clinicians can review and compare over time.
-
-**Contactless · Fast · Scalable · Standardized**
-
-> **Clinical decision support. Sensor-derived. Not diagnostic.**
-
-### Why PRIMS is different
-
-- **Depth sensing:** 3D spatial data can capture movement characteristics, including the intensity of bradykinesia (slowness of movement), that may not be represented fully by 2D video.
-- **Beyond motor symptoms:** The platform is designed to assess areas such as speech, cognition, and mood alongside motor symptoms.
-- **No patient-worn hardware:** Assessments are performed in the clinic without requiring patients to wear or maintain sensors.
-- **Telehealth potential:** The platform is designed to support assessment in settings without dedicated specialist infrastructure.
-
-### What PRIMS measures
-
-Parkinson's disease is the initial model system. PRIMS captures movement and related characteristics such as:
-
-`Tremor` · `Gait` · `Balance` · `Speech` · `Posture` · `Mobility` · `Facial expression` · `Fall risk`
-
-Work is also expanding into stroke, genetic and rare neurological disorders, and general balance and mobility.
-
-### Who benefits
-
-| Audience | Potential value |
-| --- | --- |
-| **Hospitals and health systems** | Support triage, reduce assessment bottlenecks, and promote consistent scoring across departments. |
-| **Clinics and community care** | Make structured assessments more accessible in settings without a neurologist on site. |
-| **Researchers and academia** | Support reproducible, multi-site research and quantitative longitudinal outcome measurement. |
-| **Pharma and clinical trials** | Explore quantitative endpoints and reduce inter-rater variability across study sites. |
-
-### Clinical evidence and traction
-
-PragmaClin reports the following company-level milestones:
-
-- 90%+ model agreement with clinicians
-- 10,000+ data points collected
-- 15 of 16 study sites active across 6 countries and 4 continents
-- FDA-agreed protocol for the final commercialization study, now underway
-- Intellectual property filed
-- 3 clinics deployed, with 10 hospital, health-system, and academic partners in pilots, studies, or letters of intent
-- Active dialogue with 6 pharma and industry partners
+One of the company's primary areas of development is PRIMS® (PragmaClin Real-time Intelligent Medical System), a contactless assessment platform designed to capture and quantify movement characteristics using depth-sensing cameras and machine learning. Initially focused on Parkinson's disease, PRIMS is being developed to support more consistent, quantitative assessments of motor symptoms and their progression over time.
 
 PragmaClin's published usability work is available in [JMIR Human Factors (2024)](https://pubmed.ncbi.nlm.nih.gov/38787603/).
+
+### Research and image processing
+
+This repository showcases exploratory image-processing methods for extracting quantitative characteristics from handwriting and spiral drawings. These tasks are relevant to neurological research because changes in handwriting, drawing patterns, and fine motor control can provide measurable information about movement characteristics.
+
+The notebooks demonstrate how computer vision techniques can be applied to scanned images to identify and quantify features such as:
+
+- **Stroke characteristics:** Width, thickness variation, and continuity of writing or drawing strokes.
+- **Spatial organization:** Letter-group spacing, line positioning, and baseline characteristics.
+- **Drawing patterns:** Separation of a participant's pen trace from a printed guide spiral.
+- **Movement-related features:** Image-derived characteristics that may support further investigation of fine motor control and tremor.
+
+The methods presented here are intended for research and technical exploration. They illustrate some of the image-processing approaches that can contribute to quantitative neurological assessment, alongside other sensing modalities and assessment methods being explored by PragmaClin.
+
+### PRIMS and clinical research
+
+PRIMS uses depth-sensing technology rather than scanned paper images to capture movement during standardized clinical assessments. Although the methods in this repository are not components of the PRIMS platform, they reflect a broader research interest in applying computational methods to make neurological measurements more objective, reproducible, and accessible.
 
 ### Work with PragmaClin
 
